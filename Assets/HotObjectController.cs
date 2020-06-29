@@ -8,9 +8,8 @@ internal class HotObjectController : MonoBehaviour
     private string title;
     private string description;
     private Sprite image;
+    private Color startColor;
     
-    private Color startcolor;
-
     public void Initialize(string title,string description,string imageUrl)
     {
         this.title = title;
@@ -32,9 +31,10 @@ internal class HotObjectController : MonoBehaviour
             Debug.Log(www.error);
         }
     }
+    
     private void OnMouseEnter()
     {
-        startcolor = GetComponent<Renderer>().material.color;
+        startColor = GetComponent<Renderer>().material.color;
         GetComponent<Renderer>().material.color = Color.yellow;
         
         PopUpController.Instance.Show(title,description, image);
@@ -42,7 +42,7 @@ internal class HotObjectController : MonoBehaviour
 
     private void OnMouseExit()
     {
-        GetComponent<Renderer>().material.color = startcolor;
+        GetComponent<Renderer>().material.color = startColor;
         
         PopUpController.Instance.Hide();
     }

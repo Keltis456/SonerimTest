@@ -8,6 +8,7 @@ using UnityEngine.Networking;
 public class Bootstrap : MonoBehaviour
 {
     private const string BaseUrl = "https://appdev.virtualviewing.co.uk/developer_test/";
+    
     private IEnumerator Start()
     {
         yield return LoadTextFromServer(BaseUrl + "config.json",  response => StartCoroutine(ProcessResponse(response)));
@@ -19,21 +20,14 @@ public class Bootstrap : MonoBehaviour
         
         yield return GetAssetBundle(BaseUrl + GetPlatformBundlePath(responseData),SpawnBundleObjects);
         foreach (var hotObject in responseData.HotObjects)
-        {
-            var gameObject = GameObject.Find(hotObject.Id);
-            if (gameObject != null)
-            {
-                gameObject.AddComponent<HotObjectController>().Initialize(hotObject.Title, hotObject.Description, BaseUrl + hotObject.Image);
-            }
-        }
+            GameObject.Find(hotObject.Id)?.AddComponent<HotObjectController>()
+                .Initialize(hotObject.Title, hotObject.Description, BaseUrl + hotObject.Image);
     }
 
     private static void SpawnBundleObjects(AssetBundle bundle)
     {
-        foreach (var asset in bundle.LoadAllAssets())
-        {
+        foreach (var asset in bundle.LoadAllAssets()) 
             Instantiate(asset);
-        }
     }
 
     private static string GetPlatformBundlePath(ResponseData responseData)
@@ -55,33 +49,35 @@ public class Bootstrap : MonoBehaviour
     }
 
     private static IEnumerator GetAssetBundle(string path, Action<AssetBundle> response) {
-        var request = UnityWebRequestAssetBundle.GetAssetBundle(path);
-        yield return request.SendWebRequest();
-        if (!request.isNetworkError && !request.isHttpError)
+        using (var request = UnityWebRequestAssetBundle.GetAssetBundle(path))
         {
-            response(DownloadHandlerAssetBundle.GetContent(request));
+            yield return request.SendWebRequest();
+            if (!request.isNetworkError && !request.isHttpError)
+            {
+                response(DownloadHandlerAssetBundle.GetContent(request));
+            }
+            else
+            {
+                Debug.Log(request.error);
+                response(null);
+            }
         }
-        else
-        {
-            Debug.Log(request.error);
-            response(null);
-        }
-        request.Dispose();
     }
     
     private static IEnumerator LoadTextFromServer(string url, Action<string> response)
     {
-        var request = UnityWebRequest.Get(url);
-        yield return request.SendWebRequest();
-        if (!request.isHttpError && !request.isNetworkError)
+        using (var request = UnityWebRequest.Get(url))
         {
-            response(request.downloadHandler.text);        
+            yield return request.SendWebRequest();
+            if (!request.isHttpError && !request.isNetworkError)
+            {
+                response(request.downloadHandler.text);        
+            }
+            else
+            {
+                Debug.LogErrorFormat("error request [{0}, {1}]", url, request.error);
+                response(null);
+            }
         }
-        else
-        {
-            Debug.LogErrorFormat("error request [{0}, {1}]", url, request.error);
-            response(null);
-        }
-        request.Dispose();
     }
 }
